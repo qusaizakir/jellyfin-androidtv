@@ -4,6 +4,7 @@ import static org.koin.java.KoinJavaComponent.inject;
 
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -85,8 +86,17 @@ public class ExternalPlayerActivity extends FragmentActivity {
 
         long playerFinishedTime = System.currentTimeMillis();
         Timber.d("Returned from player... %d", resultCode);
-        //MX Player will return position
-        int pos = data != null ? data.getIntExtra("position", 0) : 0;
+        
+        int pos = 0;
+        if(data != null){
+            //Support for MX player & VLC player position
+            if(data.getExtras().get("position") != null){
+                pos = data.getIntExtra("position", 0);
+            }else if (data.getExtras().get("extra_position") != null){
+                pos = (int) data.getLongExtra("extra_position", 0);
+            }
+        }
+
         if (pos > 0) Timber.i("Player returned position: %d", pos);
         Long reportPos = (long) pos * 10000;
 
@@ -288,6 +298,8 @@ public class ExternalPlayerActivity extends FragmentActivity {
     protected void startExternalActivity(String path, String container) {
         Intent external = new Intent(Intent.ACTION_VIEW);
         external.setDataAndType(Uri.parse(path), "video/"+container);
+
+        external.setComponent(new ComponentName("org.videolan.vlc", "org.videolan.vlc.gui.video.VideoPlayerActivity"));
 
         BaseItemDto item = mItemsToPlay.get(mCurrentNdx);
 
